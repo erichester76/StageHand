@@ -40,6 +40,7 @@ Then open the project in Expo Go or a simulator:
 - `src/lib/` and `src/types/`: seed data, helpers, and shared types
 - `ROADMAP.md`: canonical working roadmap for issues and milestones
 - `AGENTS.md`: repo operating guide for future coding agents and contributors
+- `docs/architecture/`: architecture decisions and platform strategy docs
 - `.github/ISSUE_TEMPLATE/`: issue templates ready for a future GitHub repo
 
 ## Tracking work
