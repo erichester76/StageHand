@@ -1,4 +1,10 @@
 export type Role = "manager" | "member" | "crowd";
+export type ProtectedRole = Exclude<Role, "crowd">;
+
+export type DeviceSession = {
+  role: Role;
+  provisionedAt: number;
+};
 
 export type SongEnergy = "Low" | "Mid" | "High";
 

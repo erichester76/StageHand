@@ -24,9 +24,11 @@ export function CrowdView({
   activeShow,
   bandName,
   boostRequest,
+  crowdLabel,
   helpers,
   isTablet,
   links,
+  onRequestStaffAccess,
   addRequest,
   addSupportTip,
   songs,
@@ -36,9 +38,11 @@ export function CrowdView({
   activeShow: Show | null;
   bandName: string;
   boostRequest: (requestId: string) => void;
+  crowdLabel: string;
   helpers: CrowdHelpers;
   isTablet: boolean;
   links: BandLinks;
+  onRequestStaffAccess: () => void;
   addRequest: (payload: { requester: string; songId: string; note: string; tip: number }) => void;
   addSupportTip: (payload: { supporter: string; amount: number; note: string }) => void;
   songs: Song[];
@@ -63,15 +67,20 @@ export function CrowdView({
 
   return (
     <View style={styles.sectionStack}>
-      <View style={styles.sectionHeader}>
+      <Pressable
+        delayLongPress={3000}
+        onLongPress={onRequestStaffAccess}
+        style={styles.sectionHeader}
+      >
         <View>
           <Text style={styles.eyebrow}>Audience mode</Text>
-          <Text style={styles.sectionTitle}>Crowd workspace</Text>
+          <Text style={styles.sectionTitle}>{crowdLabel}</Text>
         </View>
         <Text style={styles.sectionCopy}>
-          This layout is built to breathe on a tablet, with request entry and support actions beside a live-updating queue.
+          This layout is built to breathe on a tablet, with request entry and support actions beside
+          a live-updating queue.
         </Text>
-      </View>
+      </Pressable>
 
       <SectionCard
         title={activeShow?.venue || bandName}

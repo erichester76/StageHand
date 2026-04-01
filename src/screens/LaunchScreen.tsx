@@ -32,10 +32,10 @@ const roleCopy: Record<
 
 export function LaunchScreen({
   access,
-  onEnterRole,
+  onProvisionRole,
 }: {
   access: AccessSettings;
-  onEnterRole: (role: Role) => void | Promise<void>;
+  onProvisionRole: (role: Role) => void | Promise<void>;
 }) {
   const [selectedRole, setSelectedRole] = useState<Role>("crowd");
   const [pin, setPin] = useState("");
@@ -62,23 +62,24 @@ export function LaunchScreen({
 
     setError("");
     setPin("");
-    await onEnterRole(selectedRole);
+    await onProvisionRole(selectedRole);
   };
 
   return (
     <View style={styles.sectionStack}>
       <View style={styles.sectionHeader}>
         <View>
-          <Text style={styles.eyebrow}>Device launch</Text>
-          <Text style={styles.sectionTitle}>Choose this device's job</Text>
+          <Text style={styles.eyebrow}>Device setup</Text>
+          <Text style={styles.sectionTitle}>Provision this device</Text>
         </View>
         <Text style={styles.sectionCopy}>
-          Crowd tablets stay open and simple. Manager and band-member modes require a local access
-          code so the backstage tools are not accidentally exposed on venue devices.
+          Choose whether this phone or tablet should behave like a manager device, a band-member
+          device, or a public crowd kiosk. Protected roles require a local passcode before the
+          session is provisioned.
         </Text>
       </View>
 
-      <SectionCard title="Workspace access" eyebrow="Local launch control">
+      <SectionCard title="Device roles" eyebrow="Local provisioning flow">
         <View style={styles.launchRoleGrid}>
           {(["manager", "member", "crowd"] as Role[]).map((role) => {
             const config = roleCopy[role];
@@ -126,8 +127,8 @@ export function LaunchScreen({
         <PrimaryButton
           label={
             selectedRole === "crowd"
-              ? `Enter ${access.crowdLabel || "crowd tablet"}`
-              : `Unlock ${selectedConfig.title}`
+              ? `Provision ${access.crowdLabel || "crowd tablet"}`
+              : `Provision ${selectedConfig.title}`
           }
           onPress={() => {
             void handleContinue();
@@ -136,8 +137,8 @@ export function LaunchScreen({
 
         <View style={styles.stackGap}>
           <Text style={styles.helperText}>
-            Stub passcodes are editable from the manager workspace. This is a local-only gate for
-            now, which gives us product shape before we add real authentication.
+            This stores a local device session only. Manager and member devices will still require
+            unlock on relaunch, which keeps the shell compatible with future real authentication.
           </Text>
         </View>
       </SectionCard>
