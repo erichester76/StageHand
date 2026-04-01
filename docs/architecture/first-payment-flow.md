@@ -17,7 +17,7 @@ This document decides what we should ship first, not the final long-term monetiz
 Use a **hybrid first-release payment strategy**:
 
 - **Stripe Payment Links / Checkout** for the first live payment collection flows
-- **Stripe Connect** as the long-term payout foundation
+- **Stripe Connect** as the long-term payout foundation, not a release-one requirement
 - **manager-configured external support links** for Venmo, Cash App, and PayPal handoff
 - **no in-app store billing** for StageHand's first payment flows
 
@@ -72,6 +72,10 @@ Important rule:
 
 Do not increase the queue score until payment is confirmed. That aligns directly with the event model already established in `docs/architecture/domain-event-model.md`.
 
+Important policy rule:
+
+Keep request boosts framed as support for a live, real-world performance outcome, not as the sale of a digital in-app entitlement. If StageHand later turns boosts into app-only perks, premium digital ranking features, badges, or other in-app unlocks, the app-store billing analysis changes materially. citeturn1search0turn0search0
+
 ### 3. Merch
 
 For the first release, do **not** build native merch checkout inside StageHand.
@@ -104,9 +108,13 @@ Stripe's React Native docs show that in-app PaymentSheet and Payment Element flo
 
 ### Plan for payouts
 
-- **Stripe Connect** should be the payout foundation, even if the first release initially settles money into the platform and reports internal band splits before true automated payouts
+- **Stripe Connect** should be the payout foundation once StageHand itself is acting as a platform that collects and routes funds, even if the first release initially avoids automated connected-account payouts
 
 Stripe documents Connect as the product for marketplaces and platforms managing payments and moving money between multiple parties, including destination charges and separate charges and transfers. citeturn0search8turn2search2turn2search4
+
+Practical rule:
+
+Do not introduce Connect in the first release unless StageHand is actually taking platform responsibility for collection and downstream payout routing. If each band owns its own payment destination, simpler hosted flows are a better first fit. citeturn0search8turn2search0turn2search1
 
 ## Why not native in-app purchase
 
@@ -204,6 +212,7 @@ That lets us launch operationally useful payment capture without prematurely com
 - first-release payment UX is less “native” than a fully embedded PaymentSheet flow
 - Venmo, Cash App, and PayPal remain outside the canonical event ledger
 - payout automation is deferred rather than solved immediately
+- request boosts must be messaged carefully so they stay anchored to the live-show context instead of looking like a digital app unlock
 
 ## Open questions
 
