@@ -29,6 +29,7 @@ Then open the project in Expo Go or a simulator:
 - Native-friendly UI built with core React Native components only
 - Refactored `src/` structure for screens, reusable UI, shared state, helpers, and theme tokens
 - Repo-ready roadmap and GitHub issue templates for feature, bug, and architecture tracking
+- Root-level `AGENTS.md` and `ROADMAP.md` for future contributors and coding agents
 
 ## Project structure
 
@@ -37,12 +38,13 @@ Then open the project in Expo Go or a simulator:
 - `src/screens/`: manager, member, and crowd experiences
 - `src/components/`: reusable UI primitives and role switcher
 - `src/lib/` and `src/types/`: seed data, helpers, and shared types
-- `docs/roadmap.md`: current product roadmap and backlog anchors
+- `ROADMAP.md`: canonical working roadmap for issues and milestones
+- `AGENTS.md`: repo operating guide for future coding agents and contributors
 - `.github/ISSUE_TEMPLATE/`: issue templates ready for a future GitHub repo
 
 ## Tracking work
 
-Once this is published to GitHub, use the issue templates in `.github/ISSUE_TEMPLATE/` and reference `docs/roadmap.md` from every feature or architecture issue so product direction and implementation stay connected.
+Once this is published to GitHub, use the issue templates in `.github/ISSUE_TEMPLATE/` and reference `ROADMAP.md` from every feature or architecture issue so product direction and implementation stay connected.
 
 ## Product direction from here
 

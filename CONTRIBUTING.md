@@ -5,7 +5,7 @@ StageHand is using an issue-first workflow from the beginning so product decisio
 ## Working agreement
 
 1. Open or reference a GitHub issue before starting meaningful code changes.
-2. Link the issue to the relevant roadmap section in `docs/roadmap.md`.
+2. Link the issue to the relevant roadmap section in `ROADMAP.md`.
 3. Keep changes scoped to the issue so review, rollback, and release notes stay clean.
 4. Use pull requests for integration, even for early infrastructure work.
 5. Update docs and issue status when scope or assumptions change.
