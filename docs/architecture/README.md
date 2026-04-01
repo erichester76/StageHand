@@ -9,6 +9,3 @@ These documents capture the major platform and operational decisions for StageHa
 - `first-payment-flow.md`: recommended first-release payment strategy and payout direction
 - `stripe-connect-evaluation.md`: guardrail for when Stripe Connect should be introduced
 - `band-payout-reporting.md`: reporting-first payout model for managers and members
-- `crowd-kiosk-exit-flow.md`: staff-only exit flow for public crowd tablets
-- `first-payment-flow.md`: recommended first payment strategy and v1 constraints
-- `stripe-connect-evaluation.md`: when StageHand should consider Connect later
