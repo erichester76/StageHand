@@ -31,6 +31,7 @@ For the repeatable local emulator workflow, see [docs/local-mobile-testing.md](/
 
 - Expo SDK 55 project scaffold with React Native 0.83 and React 19.2 alignment
 - Local persistence with AsyncStorage so seeded demo data survives app restarts
+- Role-aware local device session shell with provisioning, protected unlock, and crowd kiosk exit
 - Shared in-memory model for songs, members, shows, request queue, and support tips
 - Responsive layout logic that gives the crowd view a tablet-optimized split pane
 - Native-friendly UI built with core React Native components only
@@ -40,8 +41,9 @@ For the repeatable local emulator workflow, see [docs/local-mobile-testing.md](/
 
 ## Project structure
 
-- `App.tsx`: app shell, role switcher, and top-level composition
+- `App.tsx`: app shell, device-session routing, and top-level composition
 - `src/hooks/useStageHandState.ts`: shared local state, persistence, and state actions
+- `src/hooks/useWorkspaceSession.ts`: local device-session and protected shell logic
 - `src/screens/`: manager, member, and crowd experiences
 - `src/components/`: reusable UI primitives and role switcher
 - `src/lib/` and `src/types/`: seed data, helpers, and shared types

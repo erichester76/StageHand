@@ -108,6 +108,12 @@ export const appStyles = StyleSheet.create({
   workspaceHeaderCopy: {
     flex: 1,
   },
+  workspaceActionGroup: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    justifyContent: "flex-end",
+  },
   workspaceTitle: {
     color: colors.text,
     fontSize: 22,
@@ -436,6 +442,30 @@ export const appStyles = StyleSheet.create({
     color: colors.muted,
     fontSize: 13,
     lineHeight: 20,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(22, 30, 36, 0.54)",
+    justifyContent: "center",
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: colors.card,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 20,
+    gap: 12,
+  },
+  modalTitle: {
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: "800",
+  },
+  modalBody: {
+    color: colors.muted,
+    fontSize: 15,
+    lineHeight: 22,
   },
   linkCard: {
     borderRadius: 18,

@@ -1,6 +1,7 @@
 import React from "react";
 import { SafeAreaView, ScrollView, Text, useWindowDimensions, View } from "react-native";
 
+import { StaffAccessModal } from "./src/components/StaffAccessModal";
 import { GhostButton, MetricCard } from "./src/components/ui";
 import { useStageHandState } from "./src/hooks/useStageHandState";
 import { useWorkspaceSession } from "./src/hooks/useWorkspaceSession";
@@ -8,6 +9,7 @@ import { CrowdView } from "./src/screens/CrowdView";
 import { LaunchScreen } from "./src/screens/LaunchScreen";
 import { ManagerView } from "./src/screens/ManagerView";
 import { MemberView } from "./src/screens/MemberView";
+import { UnlockScreen } from "./src/screens/UnlockScreen";
 import { appStyles as styles } from "./src/styles/appStyles";
 
 function App() {
@@ -15,11 +17,36 @@ function App() {
   const isTablet = width >= 900;
   const stagehand = useStageHandState();
   const session = useWorkspaceSession();
+  const [staffAccessVisible, setStaffAccessVisible] = React.useState(false);
+  const appReady = stagehand.hydrated && session.hydrated;
 
   const activeRole = session.activeRole;
+  const provisionedRole = session.deviceSession?.role ?? null;
+  const shellState = appReady ? session.shellState : "hydrating";
+
+  const workspaceTitle =
+    provisionedRole === "crowd"
+      ? stagehand.state.access.crowdLabel || "Crowd tablet"
+      : provisionedRole === "manager"
+        ? "Manager"
+        : provisionedRole === "member"
+          ? "Band member"
+          : "Device setup";
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StaffAccessModal
+        visible={staffAccessVisible}
+        onCancel={() => setStaffAccessVisible(false)}
+        onConfirm={async (passcode) => {
+          const succeeded = await session.exitCrowdMode(passcode, stagehand.state.access);
+          if (succeeded) {
+            setStaffAccessVisible(false);
+          }
+          return succeeded;
+        }}
+      />
+
       <ScrollView style={styles.screen} contentContainerStyle={styles.screenContent}>
         <View style={styles.hero}>
           <View style={styles.heroMain}>
@@ -55,35 +82,42 @@ function App() {
           </View>
         </View>
 
-        {session.hydrated && activeRole ? (
+        {shellState === "active" && activeRole !== "crowd" ? (
           <View style={styles.workspaceHeader}>
             <View style={styles.workspaceHeaderCopy}>
-              <Text style={styles.eyebrow}>Current workspace</Text>
-              <Text style={styles.workspaceTitle}>
-                {activeRole === "crowd"
-                  ? stagehand.state.access.crowdLabel || "Crowd tablet"
-                  : activeRole === "manager"
-                    ? "Manager"
-                    : "Band member"}
-              </Text>
+              <Text style={styles.eyebrow}>Current device session</Text>
+              <Text style={styles.workspaceTitle}>{workspaceTitle}</Text>
             </View>
-            <GhostButton
-              label="Change device mode"
-              onPress={() => {
-                void session.setActiveRole(null);
-              }}
-            />
+            <View style={styles.workspaceActionGroup}>
+              <GhostButton label="Lock device" onPress={session.lockWorkspace} />
+              <GhostButton
+                label="Change device mode"
+                onPress={() => {
+                  void session.clearDeviceSession();
+                }}
+              />
+            </View>
           </View>
         ) : null}
 
-        {session.hydrated && !activeRole ? (
+        {shellState === "setup" ? (
           <LaunchScreen
             access={stagehand.state.access}
-            onEnterRole={(role) => session.setActiveRole(role)}
+            onProvisionRole={(role) => session.provisionRole(role)}
           />
         ) : null}
 
-        {activeRole === "manager" ? (
+        {shellState === "locked" && provisionedRole && provisionedRole !== "crowd" ? (
+          <UnlockScreen
+            role={provisionedRole}
+            onUnlock={(passcode) => session.unlockWorkspace(passcode, stagehand.state.access)}
+            onReprovision={() => {
+              void session.clearDeviceSession();
+            }}
+          />
+        ) : null}
+
+        {shellState === "active" && activeRole === "manager" ? (
           <ManagerView
             activeShow={stagehand.activeShow}
             helpers={stagehand.helpers}
@@ -95,7 +129,7 @@ function App() {
           />
         ) : null}
 
-        {activeRole === "member" ? (
+        {shellState === "active" && activeRole === "member" ? (
           <MemberView
             activeShow={stagehand.activeShow}
             helpers={stagehand.helpers}
@@ -105,20 +139,32 @@ function App() {
           />
         ) : null}
 
-        {activeRole === "crowd" ? (
+        {shellState === "active" && activeRole === "crowd" ? (
           <CrowdView
             activeShow={stagehand.activeShow}
             bandName={stagehand.state.bandName}
             boostRequest={stagehand.actions.boostRequest}
+            crowdLabel={stagehand.state.access.crowdLabel || "Crowd workspace"}
             helpers={stagehand.helpers}
             isTablet={isTablet}
             links={stagehand.state.links}
+            onRequestStaffAccess={() => setStaffAccessVisible(true)}
             addRequest={(payload) => stagehand.actions.addRequest(payload)}
             addSupportTip={(payload) => stagehand.actions.addSupportTip(payload)}
             songs={stagehand.state.songs}
             sortedRequests={stagehand.sortedRequests}
             supportTips={stagehand.state.supportTips}
           />
+        ) : null}
+
+        {shellState === "hydrating" ? (
+          <View style={styles.card}>
+            <Text style={styles.eyebrow}>Loading session</Text>
+            <Text style={styles.cardTitle}>Restoring this device</Text>
+            <Text style={styles.leadCopy}>
+              StageHand is checking the local device session and workspace state.
+            </Text>
+          </View>
         ) : null}
       </ScrollView>
     </SafeAreaView>
