@@ -20,6 +20,13 @@ Then open the project in Expo Go or a simulator:
 - `npm run ios`
 - `npm run android`
 
+For the repeatable local emulator workflow, see [docs/local-mobile-testing.md](/Users/eric/Documents/StageHand/docs/local-mobile-testing.md) and these helper commands:
+
+- `npm run env:mobile`
+- `npm run sim:ios`
+- `npm run sim:android`
+- `npm run start:clear`
+
 ## What is included
 
 - Expo SDK 55 project scaffold with React Native 0.83 and React 19.2 alignment

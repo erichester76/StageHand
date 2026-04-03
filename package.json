@@ -5,18 +5,23 @@
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
+    "start:clear": "expo start --clear",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "env:mobile": "./scripts/check-mobile-env.sh",
+    "sim:ios": "./scripts/open-ios-simulator.sh",
+    "sim:android": "./scripts/open-android-emulator.sh"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "^55.0.0",
     "react": "19.2.0",
-    "react-native": "0.83.0"
+    "react-native": "0.83.4"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "babel-preset-expo": "^55.0.13",
     "typescript": "~5.9.3"
   }
 }
