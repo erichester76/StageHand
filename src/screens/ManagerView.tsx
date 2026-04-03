@@ -135,17 +135,6 @@ export function ManagerView({
 
   return (
     <View style={styles.sectionStack}>
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={styles.eyebrow}>Manager mode</Text>
-          <Text style={styles.sectionTitle}>Band manager workspace</Text>
-        </View>
-        <Text style={styles.sectionCopy}>
-          Active Show is now a fast live console. Planning / Pre-Show is a calmer workspace with
-          focused sections for bigger setup tasks.
-        </Text>
-      </View>
-
       <SectionCard
         title={mode === "active-show" ? "Active Show" : "Planning / Pre-Show"}
         eyebrow={activeShow ? `${helpers.formatDate(activeShow.date)} · ${activeShow.venue}` : "No active show"}
