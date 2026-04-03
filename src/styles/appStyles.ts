@@ -115,6 +115,7 @@ export const appStyles = StyleSheet.create({
     flex: 1,
   },
   workspaceHeaderStacked: {
+    flexDirection: "column",
     alignItems: "stretch",
   },
   workspaceHeaderCopyStacked: {
@@ -130,6 +131,7 @@ export const appStyles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "stretch",
     justifyContent: "flex-start",
+    width: "100%",
   },
   workspaceTitle: {
     color: colors.text,
