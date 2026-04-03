@@ -114,11 +114,24 @@ export const appStyles = StyleSheet.create({
   workspaceHeaderCopy: {
     flex: 1,
   },
+  workspaceHeaderStacked: {
+    flexDirection: "column",
+    alignItems: "stretch",
+  },
+  workspaceHeaderCopyStacked: {
+    flex: 0,
+  },
   workspaceActionGroup: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
     justifyContent: "flex-end",
+  },
+  workspaceActionGroupStacked: {
+    flexDirection: "column",
+    alignItems: "stretch",
+    justifyContent: "flex-start",
+    width: "100%",
   },
   workspaceTitle: {
     color: colors.text,
@@ -222,6 +235,44 @@ export const appStyles = StyleSheet.create({
   },
   tabPillTextActive: {
     color: "#fffaf2",
+  },
+  toolbarShell: {
+    backgroundColor: colors.panel,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 22,
+    padding: 12,
+    gap: 8,
+  },
+  toolbarRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  toolbarPill: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  toolbarPillActive: {
+    backgroundColor: colors.text,
+    borderColor: colors.text,
+  },
+  toolbarPillText: {
+    color: colors.text,
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  toolbarPillTextActive: {
+    color: "#fffaf2",
+  },
+  toolbarMeta: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 18,
   },
   fieldGroup: {
     gap: 6,
