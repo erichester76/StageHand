@@ -1,6 +1,7 @@
 import React from "react";
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 
+import { getRequestInsertionIndex } from "../lib/stagehand";
 import {
   EmptyState,
   GhostButton,
@@ -10,7 +11,15 @@ import {
   TextInputField,
 } from "../components/ui";
 import { appStyles as styles } from "../styles/appStyles";
-import { Member, RequestItem, Show, Song, StageHandState, Venue } from "../types/stagehand";
+import {
+  Member,
+  RequestItem,
+  RequestSchedulingMode,
+  Show,
+  Song,
+  StageHandState,
+  Venue,
+} from "../types/stagehand";
 
 type ManagerHelpers = {
   formatCurrency: (value: number) => string;
@@ -39,13 +48,21 @@ type ManagerActions = {
   addVenue: (venue: Omit<Venue, "id">) => void;
   updateVenue: (venueId: string, updates: Omit<Venue, "id">) => void;
   removeVenue: (venueId: string) => void;
-  addShow: (show: Omit<Show, "id" | "lineup" | "setList">) => void;
-  updateShow: (showId: string, updates: Omit<Show, "id" | "lineup" | "setList">) => void;
+  addShow: (
+    show: Omit<Show, "id" | "lineup" | "setList" | "activeSetIndex" | "requestMode" | "manualRequestIds">,
+  ) => void;
+  updateShow: (
+    showId: string,
+    updates: Omit<Show, "id" | "lineup" | "setList" | "activeSetIndex" | "requestMode" | "manualRequestIds">,
+  ) => void;
   removeShow: (showId: string) => void;
   setActiveShow: (showId: string) => void;
   toggleLineupMember: (memberId: string) => void;
   addSongToSetList: (songId: string) => void;
   removeSongFromSetList: (songId: string) => void;
+  setRequestMode: (mode: RequestSchedulingMode) => void;
+  setActiveSetIndex: (index: number) => void;
+  scheduleRequest: (requestId: string) => void;
   boostRequest: (requestId: string) => void;
   clearRequest: (requestId: string) => void;
   resetDemoData: () => void;
@@ -54,6 +71,12 @@ type ManagerActions = {
 type ManagerMode = "active-show" | "planning";
 type ActivePanel = "queue" | "set" | "tonight";
 type PlanningPanel = "shows" | "venues" | "catalog" | "band" | "settings";
+type AutoPlacementPreviewItem = {
+  request: RequestItem;
+  song: Song;
+  insertAt: number;
+  anchorSong: Song | undefined;
+};
 
 function CompactListRow({
   title,
@@ -166,6 +189,11 @@ export function ManagerView({
   const selectedMember = state.members.find((member) => member.id === selectedMemberId) || null;
   const selectedRequest = sortedRequests.find((request) => request.id === selectedRequestId) || null;
   const selectedSetSong = state.songs.find((song) => song.id === selectedSetSongId) || null;
+  const scheduledRequests = activeShow
+    ? activeShow.manualRequestIds
+        .map((requestId) => state.requests.find((request) => request.id === requestId))
+        .filter((request): request is RequestItem => Boolean(request))
+    : [];
 
   React.useEffect(() => {
     if (!selectedShow) {
@@ -226,6 +254,32 @@ export function ManagerView({
   const supportTipTotal = totalTips - requestTipTotal;
   const topRequests = sortedRequests.slice(0, 10);
   const quickAddSongs = state.songs.slice(0, 12);
+  const currentSetEntry = activeShow ? activeSetSongs[activeShow.activeSetIndex] || activeSetSongs[0] || null : null;
+  const nextSetEntry = currentSetEntry ? activeSetSongs[currentSetEntry.index + 1] || null : activeSetSongs[0] || null;
+  const selectedRequestSong = selectedRequest ? helpers.songById(selectedRequest.songId) : undefined;
+  const autoPlacementPreview: AutoPlacementPreviewItem[] =
+    activeShow?.requestMode === "auto"
+      ? topRequests
+          .map((request) => {
+            const song = helpers.songById(request.songId);
+            if (!song || !activeShow) {
+              return null;
+            }
+            const insertAt = getRequestInsertionIndex({
+              setList: activeShow.setList,
+              songs: state.songs,
+              songId: request.songId,
+              activeSetIndex: activeShow.activeSetIndex,
+            });
+            const anchorSongId = activeShow.setList[insertAt];
+            const anchorSong = anchorSongId ? helpers.songById(anchorSongId) : undefined;
+            return { request, song, insertAt, anchorSong };
+          })
+          .filter((entry): entry is AutoPlacementPreviewItem => Boolean(entry))
+      : [];
+  const selectedAutoPlacement =
+    selectedRequest ? autoPlacementPreview.find((entry) => entry.request.id === selectedRequest.id) : undefined;
+  const visibleAutoPlacementPreview = autoPlacementPreview.slice(0, 5);
 
   const resetShowForm = () => {
     setSelectedShowId(null);
@@ -335,11 +389,39 @@ export function ManagerView({
         <SectionCard
           title="Request queue"
           eyebrow={topRequests.length ? `${sortedRequests.length} requests waiting` : "No requests waiting"}
+          sideLabel={activeShow?.requestMode === "manual" ? "Manual" : "Auto"}
+          sideTone={activeShow?.requestMode === "manual" ? "warning" : "good"}
         >
           <View style={[styles.metricGrid, isTablet && styles.metricGridTablet]}>
             <MetricCard label="Live requests" value={`${sortedRequests.length}`} detail="Highest-priority first" />
-            <MetricCard label="Request tips" value={helpers.formatCurrency(requestTipTotal)} detail="Crowd demand right now" />
+            <MetricCard
+              label="Request tips"
+              value={helpers.formatCurrency(requestTipTotal)}
+              detail="Crowd demand right now"
+            />
           </View>
+          <Text style={styles.fieldLabel}>Scheduling mode</Text>
+          <View style={styles.toolbarRow}>
+            {(["auto", "manual"] as RequestSchedulingMode[]).map((modeValue) => {
+              const selected = activeShow?.requestMode === modeValue;
+              return (
+                <Pressable
+                  key={modeValue}
+                  onPress={() => actions.setRequestMode(modeValue)}
+                  style={[styles.toolbarPill, selected && styles.toolbarPillActive]}
+                >
+                  <Text style={[styles.toolbarPillText, selected && styles.toolbarPillTextActive]}>
+                    {modeValue === "auto" ? "Auto interleave" : "Manual schedule"}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.compactNote}>
+            {activeShow?.requestMode === "manual"
+              ? "Manual mode keeps requests in the queue until you place them into the set."
+              : "Auto mode keeps the queue live and slots requests into the next compatible energy window."}
+          </Text>
           <ScrollView style={styles.embeddedScrollAreaTall}>
             <View style={styles.compactList}>
               {topRequests.length ? (
@@ -367,12 +449,28 @@ export function ManagerView({
           </ScrollView>
           {selectedRequest ? (
             <SectionCard
-              title={helpers.songById(selectedRequest.songId)?.title || "Selected request"}
+              title={selectedRequestSong?.title || "Selected request"}
               eyebrow={`${selectedRequest.requester} · ${helpers.formatCurrency(selectedRequest.tip)} · ${selectedRequest.upvotes} boosts`}
             >
               <Text style={styles.leadCopy}>{selectedRequest.note || "No note from the crowd."}</Text>
+              <Text style={styles.compactNote}>
+                {activeShow?.requestMode === "manual"
+                  ? "Manual placement will insert this request at the next compatible energy point after the current song."
+                  : selectedAutoPlacement?.anchorSong
+                    ? `Auto will place this before ${selectedAutoPlacement.anchorSong.title}.`
+                    : "Auto will place this at the end of the staged set if no later energy match exists."}
+              </Text>
               <View style={styles.actionRow}>
                 <PrimaryButton label="Boost +$5" onPress={() => actions.boostRequest(selectedRequest.id)} />
+                {activeShow?.requestMode === "manual" ? (
+                  <GhostButton
+                    label="Add to set"
+                    onPress={() => {
+                      actions.scheduleRequest(selectedRequest.id);
+                      setSelectedRequestId(null);
+                    }}
+                  />
+                ) : null}
                 <GhostButton
                   label="Clear request"
                   onPress={() => {
@@ -385,6 +483,26 @@ export function ManagerView({
           ) : topRequests.length ? (
             <Text style={styles.compactNote}>Tap a request to view details and live actions.</Text>
           ) : null}
+          {activeShow?.requestMode === "manual" && scheduledRequests.length ? (
+            <>
+              <Text style={styles.fieldLabel}>Scheduled from queue</Text>
+              <View style={styles.compactList}>
+                {scheduledRequests.map((request, index) => {
+                  const song = helpers.songById(request.songId);
+                  if (!song) {
+                    return null;
+                  }
+                  return (
+                    <CompactListRow
+                      key={request.id}
+                      title={song.title}
+                      last={index === scheduledRequests.length - 1}
+                    />
+                  );
+                })}
+              </View>
+            </>
+          ) : null}
         </SectionCard>
       ) : null}
 
@@ -392,14 +510,31 @@ export function ManagerView({
         <SectionCard
           title="Running set"
           eyebrow={activeShow ? `${activeSetSongs.length} songs staged for ${activeShow.venue}` : "No active show selected"}
+          sideLabel={activeShow?.requestMode === "manual" ? "Manual" : "Auto"}
+          sideTone={activeShow?.requestMode === "manual" ? "warning" : "good"}
         >
           <View style={[styles.metricGrid, isTablet && styles.metricGridTablet]}>
             <MetricCard
-              label="Set size"
-              value={`${activeSetSongs.length}`}
-              detail={activeSetSongs[0] ? `Next up: ${activeSetSongs[0].song.title}` : "No next song staged"}
+              label="Current song"
+              value={currentSetEntry?.song.title || "None"}
+              detail={currentSetEntry ? `${currentSetEntry.song.energy} energy pocket` : "No song marked active yet"}
             />
-            <MetricCard label="Quick add" value={`${quickAddSongs.length}`} detail="Top catalog shortcuts below" />
+            <MetricCard
+              label="Up next"
+              value={nextSetEntry?.song.title || "Open slot"}
+              detail={nextSetEntry ? `Position ${nextSetEntry.index + 1}` : "Queue can fill the next move"}
+            />
+            <MetricCard label="Set size" value={`${activeSetSongs.length}`} detail="Current running order" />
+          </View>
+          <View style={styles.actionRow}>
+            <GhostButton
+              label="Previous song"
+              onPress={() => actions.setActiveSetIndex((activeShow?.activeSetIndex || 0) - 1)}
+            />
+            <GhostButton
+              label="Next song"
+              onPress={() => actions.setActiveSetIndex((activeShow?.activeSetIndex || 0) + 1)}
+            />
           </View>
           <ScrollView style={styles.embeddedScrollAreaTall}>
             <View style={styles.compactList}>
@@ -407,9 +542,12 @@ export function ManagerView({
                 activeSetSongs.map(({ song, index }) => (
                   <CompactListRow
                     key={`${song.id}-${index}`}
-                    title={song.title}
+                    title={`${index === (activeShow?.activeSetIndex || 0) ? "Now: " : ""}${song.title}`}
                     selected={selectedSetSongId === song.id}
-                    onPress={() => setSelectedSetSongId(song.id)}
+                    onPress={() => {
+                      setSelectedSetSongId(song.id);
+                      actions.setActiveSetIndex(index);
+                    }}
                     last={index === activeSetSongs.length - 1}
                   />
                 ))
@@ -440,6 +578,20 @@ export function ManagerView({
             </SectionCard>
           ) : activeSetSongs.length ? (
             <Text style={styles.compactNote}>Tap a set song to view details or remove it.</Text>
+          ) : null}
+          {activeShow?.requestMode === "auto" && autoPlacementPreview.length ? (
+            <>
+              <Text style={styles.fieldLabel}>Auto insertion preview</Text>
+              <View style={styles.compactList}>
+                {visibleAutoPlacementPreview.map((entry, index) => (
+                  <CompactListRow
+                    key={entry.request.id}
+                    title={`${entry.song.title} -> ${entry.anchorSong ? `before ${entry.anchorSong.title}` : "end of set"}`}
+                    last={index === visibleAutoPlacementPreview.length - 1}
+                  />
+                ))}
+              </View>
+            </>
           ) : null}
           <Text style={styles.fieldLabel}>Quick add from catalog</Text>
           <ScrollView style={styles.embeddedScrollArea}>

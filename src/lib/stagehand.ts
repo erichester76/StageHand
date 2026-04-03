@@ -1,6 +1,7 @@
 import { BandLinks, Member, Show, Song, SongEnergy, StageHandState, Venue } from "../types/stagehand";
 
-export const STORAGE_KEY = "stagehand-mobile-state-v3";
+export const STORAGE_KEY = "stagehand-mobile-state-v4";
+const energyOrder: Record<SongEnergy, number> = { Low: 0, Mid: 1, High: 2 };
 
 export const createId = () => Math.random().toString(36).slice(2, 10);
 
@@ -115,6 +116,9 @@ export const buildSeedState = (): StageHandState => {
     notes: "Acoustic first set, full band second set",
     lineup: members.map((member) => member.id),
     setList: songs.slice(0, 9).map((song) => song.id),
+    activeSetIndex: 0,
+    requestMode: "auto",
+    manualRequestIds: [],
   };
 
   const shows: Show[] = [
@@ -127,6 +131,9 @@ export const buildSeedState = (): StageHandState => {
       notes: "Private event load-in at 5pm",
       lineup: members.slice(0, 4).map((member) => member.id),
       setList: songs.slice(10, 18).map((song) => song.id),
+      activeSetIndex: 0,
+      requestMode: "manual",
+      manualRequestIds: [],
     },
     {
       id: createId(),
@@ -136,6 +143,9 @@ export const buildSeedState = (): StageHandState => {
       notes: "Crowd skewed younger, keep second set upbeat",
       lineup: members.map((member) => member.id),
       setList: songs.slice(18, 27).map((song) => song.id),
+      activeSetIndex: 0,
+      requestMode: "auto",
+      manualRequestIds: [],
     },
     {
       id: createId(),
@@ -145,6 +155,9 @@ export const buildSeedState = (): StageHandState => {
       notes: "Outdoor patio set with short break between sets",
       lineup: members.slice(0, 5).map((member) => member.id),
       setList: songs.slice(4, 13).map((song) => song.id),
+      activeSetIndex: 0,
+      requestMode: "auto",
+      manualRequestIds: [],
     },
     {
       id: createId(),
@@ -154,6 +167,9 @@ export const buildSeedState = (): StageHandState => {
       notes: "Late-night room, lean funk and dance-heavy",
       lineup: [members[0].id, members[1].id, members[2].id, members[3].id, members[5].id],
       setList: songs.slice(24, 33).map((song) => song.id),
+      activeSetIndex: 0,
+      requestMode: "manual",
+      manualRequestIds: [],
     },
     {
       id: createId(),
@@ -163,6 +179,9 @@ export const buildSeedState = (): StageHandState => {
       notes: "Venue wants a tighter first set and strong singalongs late",
       lineup: members.map((member) => member.id),
       setList: songs.slice(6, 15).map((song) => song.id),
+      activeSetIndex: 0,
+      requestMode: "auto",
+      manualRequestIds: [],
     },
     {
       id: createId(),
@@ -172,6 +191,9 @@ export const buildSeedState = (): StageHandState => {
       notes: "Travel date, compact backline, no percussion riser",
       lineup: members.slice(0, 5).map((member) => member.id),
       setList: songs.slice(14, 23).map((song) => song.id),
+      activeSetIndex: 0,
+      requestMode: "manual",
+      manualRequestIds: [],
     },
   ];
 
@@ -202,6 +224,7 @@ export const buildSeedState = (): StageHandState => {
         tip: 20,
         upvotes: 3,
         createdAt: Date.now() - 1000 * 60 * 30,
+        status: "pending",
       },
       {
         id: createId(),
@@ -211,6 +234,7 @@ export const buildSeedState = (): StageHandState => {
         tip: 12,
         upvotes: 1,
         createdAt: Date.now() - 1000 * 60 * 12,
+        status: "pending",
       },
       {
         id: createId(),
@@ -220,6 +244,7 @@ export const buildSeedState = (): StageHandState => {
         tip: 18,
         upvotes: 4,
         createdAt: Date.now() - 1000 * 60 * 28,
+        status: "pending",
       },
       {
         id: createId(),
@@ -229,6 +254,7 @@ export const buildSeedState = (): StageHandState => {
         tip: 15,
         upvotes: 5,
         createdAt: Date.now() - 1000 * 60 * 26,
+        status: "pending",
       },
       {
         id: createId(),
@@ -238,6 +264,7 @@ export const buildSeedState = (): StageHandState => {
         tip: 25,
         upvotes: 6,
         createdAt: Date.now() - 1000 * 60 * 22,
+        status: "pending",
       },
       {
         id: createId(),
@@ -247,6 +274,7 @@ export const buildSeedState = (): StageHandState => {
         tip: 9,
         upvotes: 2,
         createdAt: Date.now() - 1000 * 60 * 19,
+        status: "pending",
       },
       {
         id: createId(),
@@ -256,6 +284,7 @@ export const buildSeedState = (): StageHandState => {
         tip: 10,
         upvotes: 2,
         createdAt: Date.now() - 1000 * 60 * 16,
+        status: "pending",
       },
       {
         id: createId(),
@@ -265,6 +294,7 @@ export const buildSeedState = (): StageHandState => {
         tip: 30,
         upvotes: 7,
         createdAt: Date.now() - 1000 * 60 * 11,
+        status: "pending",
       },
       {
         id: createId(),
@@ -274,6 +304,7 @@ export const buildSeedState = (): StageHandState => {
         tip: 8,
         upvotes: 1,
         createdAt: Date.now() - 1000 * 60 * 9,
+        status: "pending",
       },
       {
         id: createId(),
@@ -283,6 +314,7 @@ export const buildSeedState = (): StageHandState => {
         tip: 14,
         upvotes: 3,
         createdAt: Date.now() - 1000 * 60 * 6,
+        status: "pending",
       },
     ],
     supportTips: [
@@ -356,6 +388,39 @@ export const normalizeEnergy = (value: string): SongEnergy => {
   return "Mid";
 };
 
+export const getRequestInsertionIndex = ({
+  setList,
+  songs,
+  songId,
+  activeSetIndex,
+}: {
+  setList: string[];
+  songs: Song[];
+  songId: string;
+  activeSetIndex: number;
+}) => {
+  const requestSong = songs.find((song) => song.id === songId);
+  if (!requestSong) {
+    return setList.length;
+  }
+
+  const requestEnergy = energyOrder[requestSong.energy];
+  const startIndex = Math.max(0, Math.min(activeSetIndex + 1, setList.length));
+
+  for (let index = startIndex; index < setList.length; index += 1) {
+    const stagedSong = songs.find((song) => song.id === setList[index]);
+    if (!stagedSong) {
+      continue;
+    }
+
+    if (energyOrder[stagedSong.energy] >= requestEnergy) {
+      return index;
+    }
+  }
+
+  return setList.length;
+};
+
 export const formatLink = (label: string, value: string) => {
   if (value.startsWith("http")) {
     return value;
@@ -383,8 +448,21 @@ export const mergeHydratedState = (
   songs: parsed.songs?.length ? parsed.songs : seedState.songs,
   members: parsed.members?.length ? parsed.members : seedState.members,
   venues: parsed.venues?.length ? parsed.venues : seedState.venues,
-  shows: parsed.shows?.length ? parsed.shows : seedState.shows,
-  requests: parsed.requests || seedState.requests,
+  shows:
+    parsed.shows?.map((show) => ({
+      ...show,
+      activeSetIndex:
+        typeof show.activeSetIndex === "number" && show.activeSetIndex >= 0
+          ? show.activeSetIndex
+          : 0,
+      requestMode: show.requestMode === "manual" ? "manual" : "auto",
+      manualRequestIds: show.manualRequestIds || [],
+    })) || seedState.shows,
+  requests:
+    parsed.requests?.map((request) => ({
+      ...request,
+      status: request.status === "scheduled" ? "scheduled" : "pending",
+    })) || seedState.requests,
   supportTips: parsed.supportTips || seedState.supportTips,
   activeShowId: parsed.activeShowId || parsed.shows?.[0]?.id || seedState.activeShowId,
 });
