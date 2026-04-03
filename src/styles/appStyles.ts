@@ -127,6 +127,8 @@ export const appStyles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   workspaceActionGroupStacked: {
+    flexDirection: "column",
+    alignItems: "stretch",
     justifyContent: "flex-start",
   },
   workspaceTitle: {
