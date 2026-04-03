@@ -6,12 +6,11 @@ import {
   GhostButton,
   MetricCard,
   PrimaryButton,
-  RowCard,
   SectionCard,
   TextInputField,
 } from "../components/ui";
 import { appStyles as styles } from "../styles/appStyles";
-import { Member, RequestItem, Show, Song, StageHandState } from "../types/stagehand";
+import { Member, RequestItem, Show, Song, StageHandState, Venue } from "../types/stagehand";
 
 type ManagerHelpers = {
   formatCurrency: (value: number) => string;
@@ -32,11 +31,16 @@ type ManagerActions = {
   }) => void;
   updateAccess: (access: { managerPin: string; memberPin: string; crowdLabel: string }) => void;
   addSong: (song: Omit<Song, "id">) => void;
+  updateSong: (songId: string, updates: Omit<Song, "id">) => void;
   removeSong: (songId: string) => void;
   addMember: (member: Omit<Member, "id">) => void;
+  updateMember: (memberId: string, updates: Omit<Member, "id">) => void;
   removeMember: (memberId: string) => void;
-  updateMemberAllocation: (memberId: string, allocation: number) => void;
+  addVenue: (venue: Omit<Venue, "id">) => void;
+  updateVenue: (venueId: string, updates: Omit<Venue, "id">) => void;
+  removeVenue: (venueId: string) => void;
   addShow: (show: Omit<Show, "id" | "lineup" | "setList">) => void;
+  updateShow: (showId: string, updates: Omit<Show, "id" | "lineup" | "setList">) => void;
   removeShow: (showId: string) => void;
   setActiveShow: (showId: string) => void;
   toggleLineupMember: (memberId: string) => void;
@@ -49,7 +53,37 @@ type ManagerActions = {
 
 type ManagerMode = "active-show" | "planning";
 type ActivePanel = "queue" | "set" | "tonight";
-type PlanningPanel = "shows" | "catalog" | "band" | "settings";
+type PlanningPanel = "shows" | "venues" | "catalog" | "band" | "settings";
+
+function CompactListRow({
+  title,
+  selected,
+  onPress,
+  aside,
+  last,
+}: {
+  title: string;
+  selected?: boolean;
+  onPress?: () => void;
+  aside?: React.ReactNode;
+  last?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.compactListRow,
+        selected && styles.compactListRowActive,
+        last && styles.compactListRowLast,
+      ]}
+    >
+      <View style={styles.rowMeta}>
+        <Text style={styles.rowTitle}>{title}</Text>
+      </View>
+      {aside ? <View style={styles.actionRow}>{aside}</View> : null}
+    </Pressable>
+  );
+}
 
 export function ManagerView({
   activeShow,
@@ -74,11 +108,18 @@ export function ManagerView({
   const [activePanel, setActivePanel] = React.useState<ActivePanel>("queue");
   const [planningPanel, setPlanningPanel] = React.useState<PlanningPanel>("shows");
 
+  const [selectedShowId, setSelectedShowId] = React.useState<string | null>(null);
+  const [selectedSongId, setSelectedSongId] = React.useState<string | null>(null);
+  const [selectedVenueId, setSelectedVenueId] = React.useState<string | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = React.useState<string | null>(null);
+
   const [songTitle, setSongTitle] = React.useState("");
   const [songArtist, setSongArtist] = React.useState("");
   const [songEnergy, setSongEnergy] = React.useState<Song["energy"]>("Mid");
+  const [songKey, setSongKey] = React.useState("");
+  const [songLyricsLink, setSongLyricsLink] = React.useState("");
 
-  const [showDate, setShowDate] = React.useState(activeShow?.date || "");
+  const [showDate, setShowDate] = React.useState("");
   const [showVenue, setShowVenue] = React.useState("");
   const [showCity, setShowCity] = React.useState("");
   const [showNotes, setShowNotes] = React.useState("");
@@ -86,6 +127,11 @@ export function ManagerView({
   const [memberName, setMemberName] = React.useState("");
   const [memberRole, setMemberRole] = React.useState("");
   const [memberAllocation, setMemberAllocation] = React.useState("20");
+
+  const [venueName, setVenueName] = React.useState("");
+  const [venueAddress, setVenueAddress] = React.useState("");
+  const [venueContact, setVenueContact] = React.useState("");
+  const [venueNotes, setVenueNotes] = React.useState("");
 
   const [bandName, setBandName] = React.useState(state.bandName);
   const [merchStore, setMerchStore] = React.useState(state.links.merchStore);
@@ -112,9 +158,50 @@ export function ManagerView({
     setCrowdLabel(state.access.crowdLabel);
   }, [state.access]);
 
+  const selectedShow = state.shows.find((show) => show.id === selectedShowId) || null;
+  const selectedSong = state.songs.find((song) => song.id === selectedSongId) || null;
+  const selectedVenue = state.venues.find((venue) => venue.id === selectedVenueId) || null;
+  const selectedMember = state.members.find((member) => member.id === selectedMemberId) || null;
+
   React.useEffect(() => {
-    setShowDate(activeShow?.date || "");
-  }, [activeShow?.date]);
+    if (!selectedShow) {
+      return;
+    }
+    setShowDate(selectedShow.date);
+    setShowVenue(selectedShow.venue);
+    setShowCity(selectedShow.city);
+    setShowNotes(selectedShow.notes);
+  }, [selectedShow]);
+
+  React.useEffect(() => {
+    if (!selectedSong) {
+      return;
+    }
+    setSongTitle(selectedSong.title);
+    setSongArtist(selectedSong.artist);
+    setSongEnergy(selectedSong.energy);
+    setSongKey(selectedSong.key);
+    setSongLyricsLink(selectedSong.lyricsLink);
+  }, [selectedSong]);
+
+  React.useEffect(() => {
+    if (!selectedVenue) {
+      return;
+    }
+    setVenueName(selectedVenue.name);
+    setVenueAddress(selectedVenue.address);
+    setVenueContact(selectedVenue.contact);
+    setVenueNotes(selectedVenue.notes);
+  }, [selectedVenue]);
+
+  React.useEffect(() => {
+    if (!selectedMember) {
+      return;
+    }
+    setMemberName(selectedMember.name);
+    setMemberRole(selectedMember.role);
+    setMemberAllocation(`${selectedMember.allocation}`);
+  }, [selectedMember]);
 
   const activeSetSongs = activeShow
     ? activeShow.setList
@@ -136,6 +223,38 @@ export function ManagerView({
   const topRequests = sortedRequests.slice(0, 10);
   const quickAddSongs = state.songs.slice(0, 12);
 
+  const resetShowForm = () => {
+    setSelectedShowId(null);
+    setShowDate("");
+    setShowVenue("");
+    setShowCity("");
+    setShowNotes("");
+  };
+
+  const resetSongForm = () => {
+    setSelectedSongId(null);
+    setSongTitle("");
+    setSongArtist("");
+    setSongEnergy("Mid");
+    setSongKey("");
+    setSongLyricsLink("");
+  };
+
+  const resetVenueForm = () => {
+    setSelectedVenueId(null);
+    setVenueName("");
+    setVenueAddress("");
+    setVenueContact("");
+    setVenueNotes("");
+  };
+
+  const resetMemberForm = () => {
+    setSelectedMemberId(null);
+    setMemberName("");
+    setMemberRole("");
+    setMemberAllocation("20");
+  };
+
   const secondaryTabs =
     mode === "active-show"
       ? ([
@@ -145,6 +264,7 @@ export function ManagerView({
         ] as [ActivePanel, string][])
       : ([
           ["shows", "Shows"],
+          ["venues", "Venues"],
           ["catalog", "Catalog"],
           ["band", "Band"],
           ["settings", "Settings"],
@@ -158,7 +278,7 @@ export function ManagerView({
         : "Select or create a show in Planning to run the room."
       : activeShow
         ? `Planning for ${activeShow.venue} · ${activeShow.city}`
-        : "Planning workspace ready for shows, catalog, band, and settings.";
+        : "Planning workspace ready for shows, venues, catalog, band, and settings.";
 
   return (
     <View style={styles.sectionStack}>
@@ -213,43 +333,35 @@ export function ManagerView({
           eyebrow={topRequests.length ? `${sortedRequests.length} requests waiting` : "No requests waiting"}
         >
           <View style={[styles.metricGrid, isTablet && styles.metricGridTablet]}>
-            <MetricCard
-              label="Live requests"
-              value={`${sortedRequests.length}`}
-              detail="Highest-priority requests first"
-            />
-            <MetricCard
-              label="Request tips"
-              value={helpers.formatCurrency(requestTipTotal)}
-              detail="Crowd-driven demand right now"
-            />
+            <MetricCard label="Live requests" value={`${sortedRequests.length}`} detail="Highest-priority first" />
+            <MetricCard label="Request tips" value={helpers.formatCurrency(requestTipTotal)} detail="Crowd demand right now" />
           </View>
           <ScrollView style={styles.embeddedScrollAreaTall}>
-            <View style={styles.stackGap}>
+            <View style={styles.compactList}>
               {topRequests.length ? (
-                topRequests.map((request) => {
+                topRequests.map((request, index) => {
                   const song = helpers.songById(request.songId);
                   if (!song) {
                     return null;
                   }
                   return (
-                    <View key={request.id} style={styles.rowCard}>
-                      <View style={styles.rowMeta}>
-                        <Text style={styles.rowTitle}>{song.title}</Text>
-                        <Text style={styles.rowSubtitle}>
-                          {request.requester} · {helpers.formatCurrency(request.tip)} · {request.upvotes} boosts
-                        </Text>
-                        {request.note ? <Text style={styles.compactNote}>{request.note}</Text> : null}
-                      </View>
-                      <View style={styles.actionRow}>
-                        <GhostButton label="Boost" onPress={() => actions.boostRequest(request.id)} />
-                        <GhostButton label="Clear" onPress={() => actions.clearRequest(request.id)} />
-                      </View>
-                    </View>
+                    <CompactListRow
+                      key={request.id}
+                      title={song.title}
+                      last={index === topRequests.length - 1}
+                      aside={
+                        <>
+                          <GhostButton label="Boost" onPress={() => actions.boostRequest(request.id)} />
+                          <GhostButton label="Clear" onPress={() => actions.clearRequest(request.id)} />
+                        </>
+                      }
+                    />
                   );
                 })
               ) : (
-                <EmptyState label="The room is clear right now. New requests will land here." />
+                <View style={styles.compactListRowLast}>
+                  <EmptyState label="The room is clear right now. New requests will land here." />
+                </View>
               )}
             </View>
           </ScrollView>
@@ -267,25 +379,23 @@ export function ManagerView({
               value={`${activeSetSongs.length}`}
               detail={activeSetSongs[0] ? `Next up: ${activeSetSongs[0].song.title}` : "No next song staged"}
             />
-            <MetricCard
-              label="Quick add"
-              value={`${quickAddSongs.length}`}
-              detail="Top catalog shortcuts available below"
-            />
+            <MetricCard label="Quick add" value={`${quickAddSongs.length}`} detail="Top catalog shortcuts below" />
           </View>
           <ScrollView style={styles.embeddedScrollAreaTall}>
-            <View style={styles.stackGap}>
+            <View style={styles.compactList}>
               {activeSetSongs.length ? (
                 activeSetSongs.map(({ song, index }) => (
-                  <RowCard
+                  <CompactListRow
                     key={`${song.id}-${index}`}
                     title={`${index + 1}. ${song.title}`}
-                    subtitle={`${song.artist} · ${song.energy} energy`}
+                    last={index === activeSetSongs.length - 1}
                     aside={<GhostButton label="Remove" onPress={() => actions.removeSongFromSetList(song.id)} />}
                   />
                 ))
               ) : (
-                <EmptyState label="No songs are staged for the current set yet." />
+                <View style={styles.compactListRowLast}>
+                  <EmptyState label="No songs are staged for the current set yet." />
+                </View>
               )}
             </View>
           </ScrollView>
@@ -317,97 +427,78 @@ export function ManagerView({
               value={helpers.formatCurrency(totalTips)}
               detail={`${helpers.formatCurrency(requestTipTotal)} requests · ${helpers.formatCurrency(supportTipTotal)} support`}
             />
-            <MetricCard
-              label="Lineup"
-              value={`${lineupMembers.length}`}
-              detail="Players assigned to this show"
-            />
-            <MetricCard
-              label="Support tips"
-              value={helpers.formatCurrency(supportTipTotal)}
-              detail="Direct support during the show"
-            />
+            <MetricCard label="Lineup" value={`${lineupMembers.length}`} detail="Players assigned to this show" />
+            <MetricCard label="Support tips" value={helpers.formatCurrency(supportTipTotal)} detail="Direct support during the show" />
           </View>
-          <Text style={styles.fieldLabel}>Lineup</Text>
-          <View style={styles.pillWrap}>
+          <View style={styles.compactList}>
             {lineupMembers.length ? (
-              lineupMembers.map((member) => (
-                <View key={member.id} style={styles.personPill}>
-                  <Text style={styles.personPillTitle}>{member.name}</Text>
-                  <Text style={styles.personPillSubtitle}>
-                    {member.role} · {member.allocation}% split
-                  </Text>
-                </View>
-              ))
-            ) : (
-              <EmptyState label="Assign a lineup in Planning first." />
-            )}
-          </View>
-          <Text style={styles.fieldLabel}>Payout snapshot</Text>
-          <ScrollView style={styles.embeddedScrollArea}>
-            <View style={styles.stackGap}>
-              {state.members.map((member) => (
-                <RowCard
+              lineupMembers.map((member, index) => (
+                <CompactListRow
                   key={member.id}
                   title={member.name}
-                  subtitle={`${member.role} · ${member.allocation}% share`}
-                  aside={
-                    <Text style={styles.moneyText}>
-                      {helpers.formatCurrency(totalTips * (member.allocation / 100))}
-                    </Text>
-                  }
+                  last={index === lineupMembers.length - 1}
                 />
-              ))}
-            </View>
-          </ScrollView>
+              ))
+            ) : (
+              <View style={styles.compactListRowLast}>
+                <EmptyState label="Assign a lineup in Planning first." />
+              </View>
+            )}
+          </View>
         </SectionCard>
       ) : null}
 
       {mode === "planning" && planningPanel === "shows" ? (
-        <SectionCard
-          title="Shows"
-          eyebrow={`${state.shows.length} shows in rotation`}
-        >
-          <ScrollView style={styles.embeddedScrollAreaTall}>
-            <View style={styles.stackGap}>
-              {state.shows.map((show) => (
-                <RowCard
-                  key={show.id}
-                  title={`${show.venue} · ${show.city}`}
-                  subtitle={`${helpers.formatDate(show.date)} · ${show.notes || "No notes yet"}`}
-                  aside={
-                    <>
-                      <GhostButton label="Open" onPress={() => actions.setActiveShow(show.id)} />
-                      {state.shows.length > 1 ? (
-                        <GhostButton label="Remove" onPress={() => actions.removeShow(show.id)} />
-                      ) : null}
-                    </>
-                  }
-                />
-              ))}
-            </View>
-          </ScrollView>
+        <SectionCard title="Shows" eyebrow={`${state.shows.length} shows in rotation`}>
+          <GhostButton label="New show" onPress={resetShowForm} />
           <TextInputField label="Show date" value={showDate} onChangeText={setShowDate} />
           <TextInputField label="Venue" value={showVenue} onChangeText={setShowVenue} />
           <TextInputField label="City" value={showCity} onChangeText={setShowCity} />
           <TextInputField label="Notes" value={showNotes} onChangeText={setShowNotes} />
           <PrimaryButton
-            label="Add show"
+            label={selectedShowId ? "Save show" : "Add show"}
             onPress={() => {
               if (!showDate.trim() || !showVenue.trim() || !showCity.trim()) {
                 return;
               }
-              actions.addShow({
+              const payload = {
                 date: showDate.trim(),
                 venue: showVenue.trim(),
                 city: showCity.trim(),
                 notes: showNotes.trim(),
-              });
-              setShowVenue("");
-              setShowCity("");
-              setShowNotes("");
+              };
+              if (selectedShowId) {
+                actions.updateShow(selectedShowId, payload);
+              } else {
+                actions.addShow(payload);
+              }
             }}
           />
+          {selectedShowId ? (
+            <GhostButton
+              label="Delete show"
+              onPress={() => {
+                actions.removeShow(selectedShowId);
+                resetShowForm();
+              }}
+            />
+          ) : null}
+          <ScrollView style={styles.embeddedScrollAreaTall}>
+            <View style={styles.compactList}>
+              {state.shows.map((show, index) => (
+                <CompactListRow
+                  key={show.id}
+                  title={show.venue}
+                  selected={selectedShowId === show.id}
+                  onPress={() => {
+                    setSelectedShowId(show.id);
+                    actions.setActiveShow(show.id);
+                  }}
+                  last={index === state.shows.length - 1}
+                />
+              ))}
+            </View>
+          </ScrollView>
           <Text style={styles.fieldLabel}>Selected show lineup</Text>
           <View style={styles.pillWrap}>
             {state.members.map((member) => {
@@ -425,33 +516,86 @@ export function ManagerView({
               );
             })}
           </View>
-          <Text style={styles.fieldLabel}>Prepared setlist</Text>
+          <Text style={styles.fieldLabel}>Selected show setlist</Text>
           <ScrollView style={styles.embeddedScrollArea}>
-            <View style={styles.stackGap}>
+            <View style={styles.compactList}>
               {activeSetSongs.length ? (
                 activeSetSongs.map(({ song, index }) => (
-                  <RowCard
-                    key={`${song.id}-${index}-planning`}
-                    title={`${index + 1}. ${song.title}`}
-                    subtitle={`${song.artist} · ${song.energy} energy`}
+                  <CompactListRow
+                    key={`${song.id}-${index}`}
+                    title={song.title}
+                    last={index === activeSetSongs.length - 1}
                     aside={<GhostButton label="Remove" onPress={() => actions.removeSongFromSetList(song.id)} />}
                   />
                 ))
               ) : (
-                <EmptyState label="No songs staged for the selected show yet." />
+                <View style={styles.compactListRowLast}>
+                  <EmptyState label="No songs staged for the selected show yet." />
+                </View>
               )}
             </View>
           </ScrollView>
         </SectionCard>
       ) : null}
 
+      {mode === "planning" && planningPanel === "venues" ? (
+        <SectionCard title="Venues" eyebrow={`${state.venues.length} saved venues`}>
+          <GhostButton label="New venue" onPress={resetVenueForm} />
+          <TextInputField label="Venue name" value={venueName} onChangeText={setVenueName} />
+          <TextInputField label="Address" value={venueAddress} onChangeText={setVenueAddress} />
+          <TextInputField label="Contact" value={venueContact} onChangeText={setVenueContact} />
+          <TextInputField label="Venue notes" value={venueNotes} onChangeText={setVenueNotes} />
+          <PrimaryButton
+            label={selectedVenueId ? "Save venue" : "Add venue"}
+            onPress={() => {
+              if (!venueName.trim() || !venueAddress.trim()) {
+                return;
+              }
+              const payload = {
+                name: venueName.trim(),
+                address: venueAddress.trim(),
+                contact: venueContact.trim(),
+                notes: venueNotes.trim(),
+              };
+              if (selectedVenueId) {
+                actions.updateVenue(selectedVenueId, payload);
+              } else {
+                actions.addVenue(payload);
+              }
+            }}
+          />
+          {selectedVenueId ? (
+            <GhostButton
+              label="Delete venue"
+              onPress={() => {
+                actions.removeVenue(selectedVenueId);
+                resetVenueForm();
+              }}
+            />
+          ) : null}
+          <ScrollView style={styles.embeddedScrollAreaTall}>
+            <View style={styles.compactList}>
+              {state.venues.map((venue, index) => (
+                <CompactListRow
+                  key={venue.id}
+                  title={venue.name}
+                  selected={selectedVenueId === venue.id}
+                  onPress={() => setSelectedVenueId(venue.id)}
+                  last={index === state.venues.length - 1}
+                />
+              ))}
+            </View>
+          </ScrollView>
+        </SectionCard>
+      ) : null}
+
       {mode === "planning" && planningPanel === "catalog" ? (
-        <SectionCard
-          title="Song catalog"
-          eyebrow={`${state.songs.length} songs available for requests and sets`}
-        >
+        <SectionCard title="Song catalog" eyebrow={`${state.songs.length} songs available`}>
+          <GhostButton label="New song" onPress={resetSongForm} />
           <TextInputField label="Song title" value={songTitle} onChangeText={setSongTitle} />
           <TextInputField label="Artist" value={songArtist} onChangeText={setSongArtist} />
+          <TextInputField label="In key of" value={songKey} onChangeText={setSongKey} />
+          <TextInputField label="Lyrics link" value={songLyricsLink} onChangeText={setSongLyricsLink} />
           <Text style={styles.fieldLabel}>Energy</Text>
           <View style={styles.pillWrap}>
             {(["Low", "Mid", "High"] as Song["energy"][]).map((energy) => {
@@ -470,29 +614,43 @@ export function ManagerView({
             })}
           </View>
           <PrimaryButton
-            label="Add song"
+            label={selectedSongId ? "Save song" : "Add song"}
             onPress={() => {
               if (!songTitle.trim() || !songArtist.trim()) {
                 return;
               }
-              actions.addSong({
+              const payload = {
                 title: songTitle.trim(),
                 artist: songArtist.trim(),
                 energy: helpers.normalizeEnergy(songEnergy),
-              });
-              setSongTitle("");
-              setSongArtist("");
-              setSongEnergy("Mid");
+                key: songKey.trim(),
+                lyricsLink: songLyricsLink.trim(),
+              };
+              if (selectedSongId) {
+                actions.updateSong(selectedSongId, payload);
+              } else {
+                actions.addSong(payload);
+              }
             }}
           />
+          {selectedSongId ? (
+            <GhostButton
+              label="Delete song"
+              onPress={() => {
+                actions.removeSong(selectedSongId);
+                resetSongForm();
+              }}
+            />
+          ) : null}
           <ScrollView style={styles.embeddedScrollAreaTall}>
-            <View style={styles.stackGap}>
-              {state.songs.map((song) => (
-                <RowCard
+            <View style={styles.compactList}>
+              {state.songs.map((song, index) => (
+                <CompactListRow
                   key={song.id}
                   title={song.title}
-                  subtitle={`${song.artist} · ${song.energy} energy`}
-                  aside={<GhostButton label="Remove" onPress={() => actions.removeSong(song.id)} />}
+                  selected={selectedSongId === song.id}
+                  onPress={() => setSelectedSongId(song.id)}
+                  last={index === state.songs.length - 1}
                 />
               ))}
             </View>
@@ -507,6 +665,7 @@ export function ManagerView({
           sideLabel={splitTotal === 100 ? "Balanced" : "Needs review"}
           sideTone={splitTotal === 100 ? "good" : "warning"}
         >
+          <GhostButton label="New member" onPress={resetMemberForm} />
           <TextInputField label="Member name" value={memberName} onChangeText={setMemberName} />
           <TextInputField label="Role" value={memberRole} onChangeText={setMemberRole} />
           <TextInputField
@@ -516,44 +675,42 @@ export function ManagerView({
             onChangeText={setMemberAllocation}
           />
           <PrimaryButton
-            label="Add member"
+            label={selectedMemberId ? "Save member" : "Add member"}
             onPress={() => {
               if (!memberName.trim() || !memberRole.trim()) {
                 return;
               }
-              actions.addMember({
+              const payload = {
                 name: memberName.trim(),
                 role: memberRole.trim(),
                 allocation: Number(memberAllocation) || 0,
-              });
-              setMemberName("");
-              setMemberRole("");
-              setMemberAllocation("20");
+              };
+              if (selectedMemberId) {
+                actions.updateMember(selectedMemberId, payload);
+              } else {
+                actions.addMember(payload);
+              }
             }}
           />
+          {selectedMemberId ? (
+            <GhostButton
+              label="Delete member"
+              onPress={() => {
+                actions.removeMember(selectedMemberId);
+                resetMemberForm();
+              }}
+            />
+          ) : null}
           <ScrollView style={styles.embeddedScrollAreaTall}>
-            <View style={styles.stackGap}>
-              {state.members.map((member) => (
-                <View key={member.id} style={styles.rowCard}>
-                  <View style={styles.rowMeta}>
-                    <Text style={styles.rowTitle}>{member.name}</Text>
-                    <Text style={styles.rowSubtitle}>{member.role}</Text>
-                  </View>
-                  <TextInputField
-                    label="Split %"
-                    value={`${member.allocation}`}
-                    keyboardType="numeric"
-                    onChangeText={(value) =>
-                      actions.updateMemberAllocation(member.id, Number(value) || 0)
-                    }
-                  />
-                  <View style={styles.actionRow}>
-                    <GhostButton label="Remove" onPress={() => actions.removeMember(member.id)} />
-                    <Text style={styles.moneyText}>
-                      {helpers.formatCurrency(totalTips * (member.allocation / 100))}
-                    </Text>
-                  </View>
-                </View>
+            <View style={styles.compactList}>
+              {state.members.map((member, index) => (
+                <CompactListRow
+                  key={member.id}
+                  title={member.name}
+                  selected={selectedMemberId === member.id}
+                  onPress={() => setSelectedMemberId(member.id)}
+                  last={index === state.members.length - 1}
+                />
               ))}
             </View>
           </ScrollView>

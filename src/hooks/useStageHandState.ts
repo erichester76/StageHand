@@ -21,6 +21,7 @@ import {
   Song,
   StageHandState,
   SupportTip,
+  Venue,
 } from "../types/stagehand";
 
 const seedState = buildSeedState();
@@ -80,6 +81,12 @@ export function useStageHandState() {
         songs: [{ id: createId(), ...song }, ...current.songs],
       }));
     },
+    updateSong: (songId: string, updates: Omit<Song, "id">) => {
+      replaceState((current) => ({
+        ...current,
+        songs: current.songs.map((song) => (song.id === songId ? { ...song, ...updates } : song)),
+      }));
+    },
     removeSong: (songId: string) => {
       replaceState((current) => ({
         ...current,
@@ -97,6 +104,14 @@ export function useStageHandState() {
         members: [...current.members, { id: createId(), ...member }],
       }));
     },
+    updateMember: (memberId: string, updates: Omit<Member, "id">) => {
+      replaceState((current) => ({
+        ...current,
+        members: current.members.map((member) =>
+          member.id === memberId ? { ...member, ...updates } : member,
+        ),
+      }));
+    },
     removeMember: (memberId: string) => {
       replaceState((current) => ({
         ...current,
@@ -106,6 +121,44 @@ export function useStageHandState() {
           lineup: show.lineup.filter((entry) => entry !== memberId),
         })),
       }));
+    },
+    addVenue: (venue: Omit<Venue, "id">) => {
+      replaceState((current) => ({
+        ...current,
+        venues: [{ id: createId(), ...venue }, ...current.venues],
+      }));
+    },
+    updateVenue: (venueId: string, updates: Omit<Venue, "id">) => {
+      replaceState((current) => {
+        const existingVenue = current.venues.find((venue) => venue.id === venueId);
+        const nextVenueName = updates.name;
+        return {
+          ...current,
+          venues: current.venues.map((venue) =>
+            venue.id === venueId ? { ...venue, ...updates } : venue,
+          ),
+          shows: existingVenue
+            ? current.shows.map((show) =>
+                show.venue === existingVenue.name ? { ...show, venue: nextVenueName } : show,
+              )
+            : current.shows,
+        };
+      });
+    },
+    removeVenue: (venueId: string) => {
+      replaceState((current) => {
+        const removedVenue = current.venues.find((venue) => venue.id === venueId);
+        const remainingVenues = current.venues.filter((venue) => venue.id !== venueId);
+        const remainingShows = current.shows.filter((show) => show.venue !== removedVenue?.name);
+        return {
+          ...current,
+          venues: remainingVenues,
+          shows: remainingShows,
+          activeShowId: remainingShows.find((show) => show.id === current.activeShowId)
+            ? current.activeShowId
+            : remainingShows[0]?.id || "",
+        };
+      });
     },
     updateMemberAllocation: (memberId: string, allocation: number) => {
       replaceState((current) => ({
@@ -127,6 +180,14 @@ export function useStageHandState() {
         ...current,
         shows: [createdShow, ...current.shows],
         activeShowId: createdShow.id,
+      }));
+    },
+    updateShow: (showId: string, updates: Omit<Show, "id" | "lineup" | "setList">) => {
+      replaceState((current) => ({
+        ...current,
+        shows: current.shows.map((show) =>
+          show.id === showId ? { ...show, ...updates } : show,
+        ),
       }));
     },
     removeShow: (showId: string) => {

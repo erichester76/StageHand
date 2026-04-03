@@ -13,6 +13,8 @@ export type Song = {
   title: string;
   artist: string;
   energy: SongEnergy;
+  key: string;
+  lyricsLink: string;
 };
 
 export type Member = {
@@ -30,6 +32,14 @@ export type Show = {
   notes: string;
   lineup: string[];
   setList: string[];
+};
+
+export type Venue = {
+  id: string;
+  name: string;
+  address: string;
+  contact: string;
+  notes: string;
 };
 
 export type RequestItem = {
@@ -70,6 +80,7 @@ export type StageHandState = {
   access: AccessSettings;
   songs: Song[];
   members: Member[];
+  venues: Venue[];
   shows: Show[];
   requests: RequestItem[];
   supportTips: SupportTip[];

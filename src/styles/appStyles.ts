@@ -274,6 +274,31 @@ export const appStyles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  compactList: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 18,
+    overflow: "hidden",
+    backgroundColor: colors.card,
+  },
+  compactListRow: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    gap: 8,
+  },
+  compactListRowActive: {
+    backgroundColor: colors.oceanSoft,
+  },
+  compactListRowLast: {
+    borderBottomWidth: 0,
+  },
+  compactListMeta: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 18,
+  },
   fieldGroup: {
     gap: 6,
   },
