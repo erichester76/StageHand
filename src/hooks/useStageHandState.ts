@@ -21,6 +21,7 @@ import {
   Song,
   StageHandState,
   SupportTip,
+  Venue,
 } from "../types/stagehand";
 
 const seedState = buildSeedState();
@@ -106,6 +107,27 @@ export function useStageHandState() {
           lineup: show.lineup.filter((entry) => entry !== memberId),
         })),
       }));
+    },
+    addVenue: (venue: Omit<Venue, "id">) => {
+      replaceState((current) => ({
+        ...current,
+        venues: [{ id: createId(), ...venue }, ...current.venues],
+      }));
+    },
+    removeVenue: (venueId: string) => {
+      replaceState((current) => {
+        const removedVenue = current.venues.find((venue) => venue.id === venueId);
+        const remainingVenues = current.venues.filter((venue) => venue.id !== venueId);
+        const remainingShows = current.shows.filter((show) => show.venue !== removedVenue?.name);
+        return {
+          ...current,
+          venues: remainingVenues,
+          shows: remainingShows,
+          activeShowId: remainingShows.find((show) => show.id === current.activeShowId)
+            ? current.activeShowId
+            : remainingShows[0]?.id || "",
+        };
+      });
     },
     updateMemberAllocation: (memberId: string, allocation: number) => {
       replaceState((current) => ({
