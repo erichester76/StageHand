@@ -44,6 +44,7 @@ type ManagerActions = {
   removeSongFromSetList: (songId: string) => void;
   boostRequest: (requestId: string) => void;
   clearRequest: (requestId: string) => void;
+  resetDemoData: () => void;
 };
 
 type ManagerMode = "active-show" | "planning";
@@ -630,6 +631,13 @@ export function ManagerView({
                         crowdLabel: crowdLabel.trim(),
                       })
                     }
+                  />
+                  <Text style={styles.compactNote}>
+                    Song catalog editing lives under Planning / Pre-Show and then Catalog.
+                  </Text>
+                  <GhostButton
+                    label="Reload demo data"
+                    onPress={actions.resetDemoData}
                   />
                 </View>
               </View>

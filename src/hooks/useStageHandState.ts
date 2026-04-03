@@ -277,6 +277,9 @@ export function useStageHandState() {
         ],
       }));
     },
+    resetDemoData: () => {
+      replaceState(() => buildSeedState());
+    },
   };
 
   return {
