@@ -107,6 +107,8 @@ export function ManagerView({
   const [mode, setMode] = React.useState<ManagerMode>("active-show");
   const [activePanel, setActivePanel] = React.useState<ActivePanel>("queue");
   const [planningPanel, setPlanningPanel] = React.useState<PlanningPanel>("shows");
+  const [selectedRequestId, setSelectedRequestId] = React.useState<string | null>(null);
+  const [selectedSetSongId, setSelectedSetSongId] = React.useState<string | null>(null);
 
   const [selectedShowId, setSelectedShowId] = React.useState<string | null>(null);
   const [selectedSongId, setSelectedSongId] = React.useState<string | null>(null);
@@ -162,6 +164,8 @@ export function ManagerView({
   const selectedSong = state.songs.find((song) => song.id === selectedSongId) || null;
   const selectedVenue = state.venues.find((venue) => venue.id === selectedVenueId) || null;
   const selectedMember = state.members.find((member) => member.id === selectedMemberId) || null;
+  const selectedRequest = sortedRequests.find((request) => request.id === selectedRequestId) || null;
+  const selectedSetSong = state.songs.find((song) => song.id === selectedSetSongId) || null;
 
   React.useEffect(() => {
     if (!selectedShow) {
@@ -348,13 +352,9 @@ export function ManagerView({
                     <CompactListRow
                       key={request.id}
                       title={song.title}
+                      selected={selectedRequestId === request.id}
+                      onPress={() => setSelectedRequestId(request.id)}
                       last={index === topRequests.length - 1}
-                      aside={
-                        <>
-                          <GhostButton label="Boost" onPress={() => actions.boostRequest(request.id)} />
-                          <GhostButton label="Clear" onPress={() => actions.clearRequest(request.id)} />
-                        </>
-                      }
                     />
                   );
                 })
@@ -365,6 +365,26 @@ export function ManagerView({
               )}
             </View>
           </ScrollView>
+          {selectedRequest ? (
+            <SectionCard
+              title={helpers.songById(selectedRequest.songId)?.title || "Selected request"}
+              eyebrow={`${selectedRequest.requester} · ${helpers.formatCurrency(selectedRequest.tip)} · ${selectedRequest.upvotes} boosts`}
+            >
+              <Text style={styles.leadCopy}>{selectedRequest.note || "No note from the crowd."}</Text>
+              <View style={styles.actionRow}>
+                <PrimaryButton label="Boost +$5" onPress={() => actions.boostRequest(selectedRequest.id)} />
+                <GhostButton
+                  label="Clear request"
+                  onPress={() => {
+                    actions.clearRequest(selectedRequest.id);
+                    setSelectedRequestId(null);
+                  }}
+                />
+              </View>
+            </SectionCard>
+          ) : topRequests.length ? (
+            <Text style={styles.compactNote}>Tap a request to view details and live actions.</Text>
+          ) : null}
         </SectionCard>
       ) : null}
 
@@ -387,9 +407,10 @@ export function ManagerView({
                 activeSetSongs.map(({ song, index }) => (
                   <CompactListRow
                     key={`${song.id}-${index}`}
-                    title={`${index + 1}. ${song.title}`}
+                    title={song.title}
+                    selected={selectedSetSongId === song.id}
+                    onPress={() => setSelectedSetSongId(song.id)}
                     last={index === activeSetSongs.length - 1}
-                    aside={<GhostButton label="Remove" onPress={() => actions.removeSongFromSetList(song.id)} />}
                   />
                 ))
               ) : (
@@ -399,17 +420,37 @@ export function ManagerView({
               )}
             </View>
           </ScrollView>
+          {selectedSetSong ? (
+            <SectionCard
+              title={selectedSetSong.title}
+              eyebrow={`${selectedSetSong.artist} · ${selectedSetSong.key || "Key TBD"} · ${selectedSetSong.energy}`}
+            >
+              <Text style={styles.compactNote}>
+                {selectedSetSong.lyricsLink || "No lyrics link saved for this song yet."}
+              </Text>
+              <View style={styles.actionRow}>
+                <GhostButton
+                  label="Remove from set"
+                  onPress={() => {
+                    actions.removeSongFromSetList(selectedSetSong.id);
+                    setSelectedSetSongId(null);
+                  }}
+                />
+              </View>
+            </SectionCard>
+          ) : activeSetSongs.length ? (
+            <Text style={styles.compactNote}>Tap a set song to view details or remove it.</Text>
+          ) : null}
           <Text style={styles.fieldLabel}>Quick add from catalog</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.pillWrap}>
+          <ScrollView style={styles.embeddedScrollArea}>
+            <View style={styles.compactList}>
               {quickAddSongs.map((song) => (
-                <Pressable
+                <CompactListRow
                   key={song.id}
-                  onPress={() => actions.addSongToSetList(song.id)}
-                  style={styles.selectPill}
-                >
-                  <Text style={styles.selectPillText}>{song.title}</Text>
-                </Pressable>
+                  title={song.title}
+                  last={song.id === quickAddSongs[quickAddSongs.length - 1]?.id}
+                  aside={<GhostButton label="Add" onPress={() => actions.addSongToSetList(song.id)} />}
+                />
               ))}
             </View>
           </ScrollView>
@@ -444,6 +485,16 @@ export function ManagerView({
                 <EmptyState label="Assign a lineup in Planning first." />
               </View>
             )}
+          </View>
+          <Text style={styles.fieldLabel}>Payout snapshot</Text>
+          <View style={styles.compactList}>
+            {state.members.map((member, index) => (
+              <CompactListRow
+                key={`${member.id}-payout`}
+                title={`${member.name} · ${helpers.formatCurrency(totalTips * (member.allocation / 100))}`}
+                last={index === state.members.length - 1}
+              />
+            ))}
           </View>
         </SectionCard>
       ) : null}
