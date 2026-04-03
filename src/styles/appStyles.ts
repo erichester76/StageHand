@@ -114,11 +114,20 @@ export const appStyles = StyleSheet.create({
   workspaceHeaderCopy: {
     flex: 1,
   },
+  workspaceHeaderStacked: {
+    alignItems: "stretch",
+  },
+  workspaceHeaderCopyStacked: {
+    flex: 0,
+  },
   workspaceActionGroup: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
     justifyContent: "flex-end",
+  },
+  workspaceActionGroupStacked: {
+    justifyContent: "flex-start",
   },
   workspaceTitle: {
     color: colors.text,

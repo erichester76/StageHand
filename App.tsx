@@ -49,12 +49,22 @@ function App() {
 
       <ScrollView style={styles.screen} contentContainerStyle={styles.screenContent}>
         {shellState === "active" && activeRole !== "crowd" ? (
-          <View style={styles.workspaceHeader}>
-            <View style={styles.workspaceHeaderCopy}>
+          <View style={[styles.workspaceHeader, !isTablet && styles.workspaceHeaderStacked]}>
+            <View
+              style={[
+                styles.workspaceHeaderCopy,
+                !isTablet && styles.workspaceHeaderCopyStacked,
+              ]}
+            >
               <Text style={styles.eyebrow}>Current device session</Text>
               <Text style={styles.workspaceTitle}>{workspaceTitle}</Text>
             </View>
-            <View style={styles.workspaceActionGroup}>
+            <View
+              style={[
+                styles.workspaceActionGroup,
+                !isTablet && styles.workspaceActionGroupStacked,
+              ]}
+            >
               <GhostButton label="Lock device" onPress={session.lockWorkspace} />
               <GhostButton
                 label="Change device mode"
