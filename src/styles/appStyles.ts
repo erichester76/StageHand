@@ -43,6 +43,12 @@ export const appStyles = StyleSheet.create({
   heroStatsTablet: {
     flexDirection: "row",
   },
+  metricGrid: {
+    gap: 12,
+  },
+  metricGridTablet: {
+    flexDirection: "row",
+  },
   metricCard: {
     flex: 1,
     backgroundColor: colors.card,
@@ -180,6 +186,42 @@ export const appStyles = StyleSheet.create({
   },
   stackGap: {
     gap: 12,
+  },
+  dashboardColumns: {
+    gap: 16,
+  },
+  dashboardColumnsTablet: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  dashboardColumn: {
+    flex: 1,
+    gap: 16,
+  },
+  tabRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  tabPill: {
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.panel,
+  },
+  tabPillActive: {
+    backgroundColor: colors.text,
+    borderColor: colors.text,
+  },
+  tabPillText: {
+    color: colors.text,
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  tabPillTextActive: {
+    color: "#fffaf2",
   },
   fieldGroup: {
     gap: 6,
@@ -361,6 +403,17 @@ export const appStyles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  embeddedScrollArea: {
+    maxHeight: 240,
+  },
+  embeddedScrollAreaTall: {
+    maxHeight: 320,
+  },
+  compactNote: {
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: 18,
+  },
   leadCopy: {
     color: colors.muted,
     fontSize: 15,
@@ -398,6 +451,13 @@ export const appStyles = StyleSheet.create({
   crowdRightColumn: {
     flex: 1.15,
     gap: 16,
+  },
+  linkGrid: {
+    gap: 10,
+  },
+  linkGridTablet: {
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   launchRoleGrid: {
     gap: 12,

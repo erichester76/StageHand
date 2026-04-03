@@ -53,9 +53,8 @@ function App() {
             <Text style={styles.eyebrow}>Unified band operations</Text>
             <Text style={styles.heroTitle}>StageHand</Text>
             <Text style={styles.heroBody}>
-              One mobile app for the manager, the band, and the room. The crowd experience expands
-              into a tablet-first layout so request taking and tipping can live beside the stage or
-              merch table.
+              Manager, band, and crowd tools now aim for a tighter dashboard feel instead of long
+              stacked mockups.
             </Text>
           </View>
 
