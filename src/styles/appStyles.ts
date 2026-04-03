@@ -288,6 +288,9 @@ export const appStyles = StyleSheet.create({
     borderBottomColor: colors.border,
     gap: 8,
   },
+  compactListRowActive: {
+    backgroundColor: colors.oceanSoft,
+  },
   compactListRowLast: {
     borderBottomWidth: 0,
   },
