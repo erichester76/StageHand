@@ -2,7 +2,7 @@ import React from "react";
 import { SafeAreaView, ScrollView, Text, useWindowDimensions, View } from "react-native";
 
 import { StaffAccessModal } from "./src/components/StaffAccessModal";
-import { GhostButton, MetricCard } from "./src/components/ui";
+import { GhostButton } from "./src/components/ui";
 import { useStageHandState } from "./src/hooks/useStageHandState";
 import { useWorkspaceSession } from "./src/hooks/useWorkspaceSession";
 import { CrowdView } from "./src/screens/CrowdView";
@@ -23,7 +23,6 @@ function App() {
   const activeRole = session.activeRole;
   const provisionedRole = session.deviceSession?.role ?? null;
   const shellState = appReady ? session.shellState : "hydrating";
-  const showAppSummary = shellState !== "setup";
 
   const workspaceTitle =
     provisionedRole === "crowd"
@@ -49,41 +48,6 @@ function App() {
       />
 
       <ScrollView style={styles.screen} contentContainerStyle={styles.screenContent}>
-        {showAppSummary ? (
-          <View style={styles.hero}>
-            <View style={styles.heroMain}>
-              <Text style={styles.eyebrow}>Unified band operations</Text>
-              <Text style={styles.heroTitle}>StageHand</Text>
-              <Text style={styles.heroBody}>
-                Manager, band, and crowd tools now aim for a tighter dashboard feel instead of long
-                stacked mockups.
-              </Text>
-            </View>
-
-            <View style={[styles.heroStats, isTablet && styles.heroStatsTablet]}>
-              <MetricCard
-                label="Songs ready"
-                value={`${stagehand.state.songs.length}`}
-                detail="Live request catalog"
-              />
-              <MetricCard
-                label="Queued requests"
-                value={`${stagehand.sortedRequests.length}`}
-                detail="Room demand right now"
-              />
-              <MetricCard
-                label="Tonight's tips"
-                value={stagehand.helpers.formatCurrency(stagehand.totalTips)}
-                detail={
-                  stagehand.activeShow
-                    ? `${stagehand.activeShow.venue} · ${stagehand.activeShow.city}`
-                    : "No active show"
-                }
-              />
-            </View>
-          </View>
-        ) : null}
-
         {shellState === "active" && activeRole !== "crowd" ? (
           <View style={styles.workspaceHeader}>
             <View style={styles.workspaceHeaderCopy}>
