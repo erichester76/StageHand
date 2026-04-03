@@ -7,6 +7,7 @@ import {
   formatCurrency,
   formatDate,
   formatLink,
+  getRequestInsertionIndex,
   mergeHydratedState,
   nextFriday,
   normalizeEnergy,
@@ -17,6 +18,7 @@ import {
   BandLinks,
   Member,
   RequestItem,
+  RequestSchedulingMode,
   Show,
   Song,
   StageHandState,
@@ -25,6 +27,13 @@ import {
 } from "../types/stagehand";
 
 const seedState = buildSeedState();
+
+const clampIndex = (value: number, max: number) => {
+  if (max <= 0) {
+    return 0;
+  }
+  return Math.max(0, Math.min(value, max));
+};
 
 export function useStageHandState() {
   const [state, setState] = useState<StageHandState>(seedState);
@@ -61,11 +70,13 @@ export function useStageHandState() {
   const supportTipTotal = state.supportTips.reduce((sum, tip) => sum + tip.amount, 0);
   const totalTips = requestTips + supportTipTotal;
   const splitTotal = state.members.reduce((sum, member) => sum + member.allocation, 0);
-  const sortedRequests = [...state.requests].sort((left, right) => {
-    const leftScore = left.tip * 100 + left.upvotes;
-    const rightScore = right.tip * 100 + right.upvotes;
-    return rightScore - leftScore;
-  });
+  const sortedRequests = state.requests
+    .filter((request) => request.status === "pending")
+    .sort((left, right) => {
+      const leftScore = left.tip * 100 + left.upvotes;
+      const rightScore = right.tip * 100 + right.upvotes;
+      return rightScore - leftScore;
+    });
 
   const songById = (songId: string) => state.songs.find((song) => song.id === songId);
   const memberById = (memberId: string) => state.members.find((member) => member.id === memberId);
@@ -168,11 +179,16 @@ export function useStageHandState() {
         ),
       }));
     },
-    addShow: (show: Omit<Show, "id" | "lineup" | "setList">) => {
+    addShow: (
+      show: Omit<Show, "id" | "lineup" | "setList" | "activeSetIndex" | "requestMode" | "manualRequestIds">,
+    ) => {
       const createdShow: Show = {
         id: createId(),
         lineup: [],
         setList: [],
+        activeSetIndex: 0,
+        requestMode: "auto",
+        manualRequestIds: [],
         ...show,
       };
 
@@ -182,7 +198,10 @@ export function useStageHandState() {
         activeShowId: createdShow.id,
       }));
     },
-    updateShow: (showId: string, updates: Omit<Show, "id" | "lineup" | "setList">) => {
+    updateShow: (
+      showId: string,
+      updates: Omit<Show, "id" | "lineup" | "setList" | "activeSetIndex" | "requestMode" | "manualRequestIds">,
+    ) => {
       replaceState((current) => ({
         ...current,
         shows: current.shows.map((show) =>
@@ -211,6 +230,9 @@ export function useStageHandState() {
           notes: "",
           lineup: current.members.map((member) => member.id),
           setList: [],
+          activeSetIndex: 0,
+          requestMode: "auto",
+          manualRequestIds: [],
         };
 
         return {
@@ -262,9 +284,72 @@ export function useStageHandState() {
           }
           const nextSetList = [...show.setList];
           nextSetList.splice(index, 1);
-          return { ...show, setList: nextSetList };
+          return {
+            ...show,
+            setList: nextSetList,
+            activeSetIndex:
+              index <= show.activeSetIndex
+                ? clampIndex(show.activeSetIndex - 1, nextSetList.length - 1)
+                : show.activeSetIndex,
+          };
         }),
       }));
+    },
+    setRequestMode: (mode: RequestSchedulingMode) => {
+      replaceState((current) => ({
+        ...current,
+        shows: current.shows.map((show) =>
+          show.id === current.activeShowId ? { ...show, requestMode: mode } : show,
+        ),
+      }));
+    },
+    setActiveSetIndex: (index: number) => {
+      replaceState((current) => ({
+        ...current,
+        shows: current.shows.map((show) =>
+          show.id === current.activeShowId
+            ? {
+                ...show,
+                activeSetIndex: clampIndex(index, show.setList.length - 1),
+              }
+            : show,
+        ),
+      }));
+    },
+    scheduleRequest: (requestId: string) => {
+      replaceState((current) => {
+        const request = current.requests.find((entry) => entry.id === requestId);
+        if (!request) {
+          return current;
+        }
+
+        return {
+          ...current,
+          shows: current.shows.map((show) => {
+            if (show.id !== current.activeShowId) {
+              return show;
+            }
+
+            const insertAt = getRequestInsertionIndex({
+              setList: show.setList,
+              songs: current.songs,
+              songId: request.songId,
+              activeSetIndex: show.activeSetIndex,
+            });
+            const nextSetList = [...show.setList];
+            nextSetList.splice(insertAt, 0, request.songId);
+
+            return {
+              ...show,
+              setList: nextSetList,
+              manualRequestIds: [...show.manualRequestIds, request.id],
+            };
+          }),
+          requests: current.requests.map((entry) =>
+            entry.id === requestId ? { ...entry, status: "scheduled" } : entry,
+          ),
+        };
+      });
     },
     updateProfile: (profile: BandLinks & { bandName: string }) => {
       replaceState((current) => ({
@@ -303,6 +388,7 @@ export function useStageHandState() {
             tip: payload.tip,
             upvotes: 1,
             createdAt: Date.now(),
+            status: "pending",
           },
         ],
       }));
@@ -321,6 +407,10 @@ export function useStageHandState() {
       replaceState((current) => ({
         ...current,
         requests: current.requests.filter((request) => request.id !== requestId),
+        shows: current.shows.map((show) => ({
+          ...show,
+          manualRequestIds: show.manualRequestIds.filter((entry) => entry !== requestId),
+        })),
       }));
     },
     addSupportTip: (payload: { supporter: string; amount: number; note: string }) => {

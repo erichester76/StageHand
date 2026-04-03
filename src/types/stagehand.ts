@@ -7,6 +7,7 @@ export type DeviceSession = {
 };
 
 export type SongEnergy = "Low" | "Mid" | "High";
+export type RequestSchedulingMode = "auto" | "manual";
 
 export type Song = {
   id: string;
@@ -32,6 +33,9 @@ export type Show = {
   notes: string;
   lineup: string[];
   setList: string[];
+  activeSetIndex: number;
+  requestMode: RequestSchedulingMode;
+  manualRequestIds: string[];
 };
 
 export type Venue = {
@@ -50,6 +54,7 @@ export type RequestItem = {
   tip: number;
   upvotes: number;
   createdAt: number;
+  status: "pending" | "scheduled";
 };
 
 export type SupportTip = {
